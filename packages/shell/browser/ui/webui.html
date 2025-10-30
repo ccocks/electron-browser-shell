@@ -5,34 +5,63 @@
     <title>Shell Browser</title>
     <style>
       :root {
-        /* https://colorhunt.co/palette/161920 */
-        --bg-color: #39375b;
-        --text-color: #ececec;
-        --tab-color: #745c97;
-        --toolbar-control-color: #d597ce;
+        /* Modern Apple-like color palette */
+        --bg-color: #f5f5f7;
+        --text-color: #1d1d1f;
+        --text-secondary: #6e6e73;
+        --tab-active-bg: #ffffff;
+        --tab-inactive-bg: #f0f0f5;
+        --toolbar-bg: #f5f5f7;
+        --border-color: #d2d2d7;
+        --accent-color: #0071e3;
+        --accent-hover: #0077ed;
+        --control-hover: rgba(0, 0, 0, 0.05);
+        --control-active: rgba(0, 0, 0, 0.1);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-        /* electron-chrome-extensions colors */
-        --browser-action-badge-outline: var(--tab-color);
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg-color: #1e1e1e;
+          --text-color: #f5f5f7;
+          --text-secondary: #a1a1a6;
+          --tab-active-bg: #2c2c2e;
+          --tab-inactive-bg: #1c1c1e;
+          --toolbar-bg: #1e1e1e;
+          --border-color: #38383a;
+          --accent-color: #0a84ff;
+          --accent-hover: #5e9eff;
+          --control-hover: rgba(255, 255, 255, 0.1);
+          --control-active: rgba(255, 255, 255, 0.15);
+          --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+          --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+        }
       }
       
       *, *:before, *:after {
         box-sizing: border-box;
         user-select: none;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
       html {
-        background: var(--tab-color);
         height: 100%;
         margin: 0;
         padding: 0;
+        background: var(--bg-color);
       }
 
       body {
         padding: 0;
         margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif;
-        font-size: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+        font-size: 13px;
         color: var(--text-color);
+        background: var(--bg-color);
+        line-height: 1.4;
       }
 
       ul {
@@ -42,14 +71,19 @@
       }
 
       .topbar {
-        background: var(--bg-color);
+        background: var(--toolbar-bg);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        z-index: 1;
       }
 
       /*----- TABS -----*/
 
       #tabstrip {
         width: 100%;
-        height: calc(env(titlebar-area-height, 31px) + 1px);
+        height: calc(env(titlebar-area-height, 36px) + 1px);
+        -webkit-app-region: drag;
       }
 
       .tab-container {
@@ -57,9 +91,12 @@
         left: env(titlebar-area-x);
         top: env(titlebar-area-y);
         width: env(titlebar-area-width);
-        height: calc(env(titlebar-area-height, 31px) + 1px);
+        height: calc(env(titlebar-area-height, 36px) + 1px);
         display: flex;
         flex-direction: row;
+        align-items: center;
+        padding: 0 8px;
+        gap: 4px;
       }
       
       .tab-list {
@@ -72,9 +109,22 @@
       #createtab {
         background: transparent;
         border: none;
-        color: #fff;
-        font-weight: bold;
-        font-family: 'Courier New', Courier, monospace;
+        color: var(--text-secondary);
+        font-size: 18px;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+        -webkit-app-region: no-drag;
+      }
+
+      #createtab:hover {
+        background: var(--control-hover);
+        color: var(--text-color);
       }
 
       #createtab:hover {
@@ -82,25 +132,46 @@
       }
 
       .tab {
-        padding: 0.2rem 0.4rem;
-        height: 100%;
+        padding: 0 12px;
+        height: 28px;
         overflow: hidden;
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
-        width: 12rem;
-        box-shadow: inset -1px 0 0 0 rgba(0,0,0,0.33);
+        width: 220px;
+        background: var(--tab-inactive-bg);
+        border-radius: 6px 6px 0 0;
+        border: 1px solid var(--border-color);
+        border-bottom: none;
+        position: relative;
+        transition: var(--transition);
+        -webkit-app-region: no-drag;
+        cursor: pointer;
+        margin-top: 6px;
+      }
+
+      .tab:hover {
+        background: var(--tab-hover-bg, var(--tab-inactive-bg));
       }
 
       .tab[data-active] {
-        background: var(--tab-color);
+        background: var(--tab-active-bg);
+        border-bottom: 1px solid var(--tab-active-bg);
+        margin-bottom: -1px;
+        z-index: 1;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .tab[data-active]:hover {
+        background: var(--tab-active-bg);
       }
 
       .tab .favicon[src] {
         display: none;
         width: 16px;
         height: 16px;
-        margin-right: 0.2rem;
+        margin-right: 8px;
+        flex-shrink: 0;
       }
 
       .tab .favicon[src].loaded {
@@ -113,8 +184,15 @@
         min-width: 0;
         text-overflow: ellipsis;
         overflow: hidden;
-        font-size: 0.725rem;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-color);
+        transition: var(--transition);
         user-select: none;
+      }
+
+      .tab[data-active] .title {
+        color: var(--accent-color);
       }
 
       .tab .controls {
@@ -122,18 +200,52 @@
         font-size: 0;
       }
 
+      .tab .controls {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: 8px;
+      }
+
       .tab .controls .control {
-        background: rgba(0,0,0,0.2);
+        background: transparent;
         border: none;
         border-radius: 50%;
         padding: 0;
-        margin-left: 0.2rem;
-        width: 1rem;
-        height: 1rem;
-        color: #aaa;
-        font-size: 0.7rem;
-        vertical-align: middle;
-        line-height: 0;
+        width: 18px;
+        height: 18px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: var(--transition);
+      }
+
+      .tab:hover .controls .control,
+      .tab[data-active] .controls .control {
+        opacity: 1;
+      }
+
+      .tab .controls .control:hover {
+        background: var(--control-hover);
+        color: var(--text-color);
+      }
+
+      .tab .controls .control:active {
+        background: var(--control-active);
+      }
+
+      .tab .controls .close {
+        color: var(--text-secondary);
+      }
+
+      .tab .controls .close:hover {
+        background: #ff453a;
+        color: white;
       }
 
       .tab .controls .control:disabled {
@@ -143,9 +255,8 @@
       .app-drag {
         flex: 1 0 auto;
         -webkit-app-region: drag;
-        height: calc(100% - 5px);
+        height: 100%;
         min-width: 2rem;
-        align-self: flex-end;
       }
       
       .window-controls {
@@ -158,11 +269,43 @@
         display: flex;
       }
 
+      .window-controls {
+        display: flex;
+        gap: 2px;
+        -webkit-app-region: no-drag;
+        margin-left: 8px;
+      }
+
       .window-controls .control {
-        width: 2.5rem;
-        background: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
         border: none;
-        color: #fff;
+        padding: 0;
+        margin: 0 2px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        line-height: 1;
+        color: transparent;
+        transition: var(--transition);
+      }
+
+      .window-controls .control:hover {
+        color: #000;
+      }
+
+      #minimize {
+        background: #ffcc00;
+      }
+
+      #maximize {
+        background: #34c759;
+      }
+
+      #close {
+        background: #ff3b30;
       }
 
       .window-controls .control:hover {
@@ -172,41 +315,93 @@
       /*----- TOOLBAR -----*/
 
       .toolbar {
-        height: 1.875rem;
-        background-color: var(--tab-color);
+        height: 40px;
+        background-color: var(--toolbar-bg);
         display: flex;
         align-items: center;
-        padding: 0.2rem 0.5rem;
+        padding: 0 12px;
+        gap: 8px;
+        border-top: 1px solid var(--border-color);
+        -webkit-app-region: drag;
+      }
+
+      .toolbar > * {
+        -webkit-app-region: no-drag;
       }
 
       .toolbar .page-controls {
-        margin-right: 0.5rem;
+        display: flex;
+        gap: 4px;
       }
       
       .address-bar {
         flex: 1 0 auto;
-        line-height: 0;
-        height: 100%;
+        height: 28px;
+        position: relative;
+        max-width: 800px;
       }
 
       .address-bar input {
         width: 100%;
         height: 100%;
-        background: var(--bg-color);
+        background: var(--tab-inactive-bg);
         color: var(--text-color);
-        border: none;
-        border-radius: 2rem;
-        padding: 0 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0 12px;
         outline: none;
+        font-size: 12px;
+        transition: var(--transition);
+        box-shadow: 0 0 0 0 var(--accent-color);
+      }
+
+      .address-bar input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+      }
+
+      .address-bar input::placeholder {
+        color: var(--text-secondary);
+        opacity: 1;
       }
 
       .toolbar .control {
         background: none;
         border: none;
-        width: 1.5rem;
-        height: 1.5rem;
+        width: 24px;
+        height: 24px;
         padding: 0;
-        line-height: 0;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .toolbar .control:hover {
+        background: var(--control-hover);
+        color: var(--text-color);
+      }
+
+      .toolbar .control:active {
+        background: var(--control-active);
+      }
+
+      .toolbar .control:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Animation for refresh button when loading */
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      #reload.loading {
+        animation: spin 1s linear infinite;
       }
     </style>
   </head>
@@ -218,7 +413,7 @@
             <template id="tabtemplate">
               <li class="tab">
                 <img class="favicon" />
-                <span class="title"></span>
+                <span class="title">New Tab</span>
                 <div class="controls">
                   <button class="control audio" disabled>🔊</button>
                   <button class="control close">✕</button>
@@ -226,7 +421,11 @@
               </li>
             </template>
           </ul>
-          <button id="createtab">+</button>
+          <button id="createtab" title="New Tab" aria-label="New Tab">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 4V20M4 12H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <div class="app-drag"></div>
           <div class="window-controls">
             <button id="minimize" class="control">🗕</button>
@@ -237,9 +436,21 @@
       </div>
       <div class="toolbar">
         <div class="page-controls">
-          <button id="goback" class="control">⬅️</button>
-          <button id="goforward" class="control">➡️</button>
-          <button id="reload" class="control">🔄</button>
+          <button id="goback" class="control" title="Back" aria-label="Back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button id="goforward" class="control" title="Forward" aria-label="Forward">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button id="reload" class="control" title="Reload" aria-label="Reload">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C14.3941 3 16.5919 3.99921 18.1421 5.64539M21 4V8.5M21 8.5H16.5M21 8.5L18.1421 5.64539" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
         <div class="address-bar">
           <input id="addressurl" spellcheck="false" />
@@ -248,6 +459,18 @@
       </div>
     </div>
   </div>
+  <script>
+    // Add loading state to refresh button
+    document.addEventListener('DOMContentLoaded', () => {
+      const reloadBtn = document.getElementById('reload');
+      if (reloadBtn) {
+        reloadBtn.addEventListener('click', function() {
+          this.classList.add('loading');
+          setTimeout(() => this.classList.remove('loading'), 1000);
+        });
+      }
+    });
+  </script>
   <script src="./webui.js"></script>
   </body>
 </html>
