@@ -23,11 +23,25 @@ class WebUI {
       closeButton: $('#close'),
     }
 
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('test') === 'true') {
+      this.runTestMode()
+    } else {
+      this.addEventListeners()
+      this.initTabs()
+    }
+
+    const platformClass = `platform-${navigator.userAgentData.platform.toLowerCase()}`
+    document.body.classList.add(platformClass)
+  }
+
+  addEventListeners() {
     this.$.createTabButton.addEventListener('click', () => chrome.tabs.create())
     this.$.goBackButton.addEventListener('click', () => chrome.tabs.goBack())
     this.$.goForwardButton.addEventListener('click', () => chrome.tabs.goForward())
     this.$.reloadButton.addEventListener('click', () => chrome.tabs.reload())
     this.$.addressUrl.addEventListener('keypress', this.onAddressUrlKeyPress.bind(this))
+    this.$.addressUrl.addEventListener('click', () => this.$.addressUrl.select())
 
     this.$.minimizeButton.addEventListener('click', () =>
       chrome.windows.get(chrome.windows.WINDOW_ID_CURRENT, (win) => {
@@ -40,11 +54,69 @@ class WebUI {
       }),
     )
     this.$.closeButton.addEventListener('click', () => chrome.windows.remove())
+  }
 
-    const platformClass = `platform-${navigator.userAgentData.platform.toLowerCase()}`
-    document.body.classList.add(platformClass)
+  runTestMode() {
+    console.log('Running in test mode')
+    // Mock chrome API to avoid errors in the console.
+    window.chrome = {
+      tabs: {
+        create: () => {
+          const newId = Math.max(0, ...this.tabList.map((t) => t.id)) + 1
+          const newTab = { id: newId, title: 'New Tab', url: 'about:newtab', active: false }
+          this.tabList.push(newTab)
+          this.renderTab(newTab)
+          this.setActiveTab(newTab)
+        },
+        goBack: () => console.log('chrome.tabs.goBack'),
+        goForward: () => console.log('chrome.tabs.goForward'),
+        reload: () => console.log('chrome.tabs.reload'),
+        update: (tabId, options) => {
+          const tab = this.tabList.find((t) => t.id === tabId)
+          if (tab) {
+            Object.assign(tab, options)
+            this.renderTab(tab)
+            if (options.active) {
+              this.setActiveTab(tab)
+            }
+          }
+        },
+        remove: (tabId) => {
+          const tabIndex = this.tabList.findIndex((tab) => tab.id === tabId)
+          if (tabIndex > -1) {
+            this.tabList.splice(tabIndex, 1)
+            const tabNode = this.$.tabList.querySelector(`[data-tab-id="${tabId}"]`)
+            if (tabNode) tabNode.remove()
 
-    this.initTabs()
+            // if we removed the active tab, make another active
+            if (this.activeTabId === tabId && this.tabList.length > 0) {
+              this.setActiveTab(this.tabList[0])
+            }
+          }
+        },
+      },
+      windows: {
+        get: (id, cb) => cb({ id, state: 'normal' }),
+        update: (...args) => console.log('chrome.windows.update', ...args),
+        remove: () => console.log('chrome.windows.remove'),
+      },
+    }
+
+    // now that chrome is mocked, add the listeners
+    this.addEventListeners()
+
+    this.tabList = [
+      { id: 1, title: 'Google', url: 'https://google.com', active: true, favIconUrl: 'https://www.google.com/favicon.ico' },
+      { id: 2, title: 'Github', url: 'https://github.com', active: false, favIconUrl: 'https://github.com/favicon.ico' },
+      { id: 3, title: 'A very long title to see how it overflows and how the UI handles it', url: 'https://example.com', active: false, audible: true },
+      { id: 4, title: 'Stack Overflow', url: 'https://stackoverflow.com', active: false, favIconUrl: 'https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico' },
+    ]
+    this.renderTabs()
+
+    const activeTab = this.tabList.find((tab) => tab.active)
+    if (activeTab) {
+      this.setActiveTab(activeTab)
+    }
   }
 
   async initTabs() {
@@ -105,7 +177,11 @@ class WebUI {
       const tabIndex = this.tabList.findIndex((tab) => tab.id === tabId)
       if (tabIndex > -1) {
         this.tabList.splice(tabIndex, 1)
-        this.$.tabList.querySelector(`[data-tab-id="${tabId}"]`).remove()
+        const tabNode = this.$.tabList.querySelector(`[data-tab-id="${tabId}"]`)
+        if (tabNode) {
+          tabNode.classList.add('closing')
+          tabNode.addEventListener('animationend', () => tabNode.remove())
+        }
       }
     })
   }
@@ -119,6 +195,10 @@ class WebUI {
         tab.active = true
         this.renderTab(tab)
         this.renderToolbar(tab)
+
+        if (tab.url === 'about:newtab') {
+          setTimeout(() => this.$.addressUrl.focus(), 0)
+        }
       } else {
         if (tab.active) {
           tab.active = false
@@ -139,10 +219,38 @@ class WebUI {
     const tabElem = this.$.tabTemplate.content.cloneNode(true).firstElementChild
     tabElem.dataset.tabId = tab.id
 
-    tabElem.addEventListener('click', () => {
-      chrome.tabs.update(tab.id, { active: true })
+    tabElem.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', tab.id)
+      this.draggedTab = tabElem
+      tabElem.classList.add('dragging')
     })
-    tabElem.querySelector('.close').addEventListener('click', () => {
+    tabElem.addEventListener('dragend', () => {
+      this.draggedTab.classList.remove('dragging')
+      this.draggedTab = null
+    })
+    tabElem.addEventListener('dragover', (e) => {
+      e.preventDefault()
+      if (tabElem !== this.draggedTab) {
+        const rect = tabElem.getBoundingClientRect()
+        const isAfter = e.clientX > rect.left + rect.width / 2
+        if (isAfter) {
+          tabElem.parentNode.insertBefore(this.draggedTab, tabElem.nextSibling)
+        } else {
+          tabElem.parentNode.insertBefore(this.draggedTab, tabElem)
+        }
+      }
+    })
+
+    tabElem.addEventListener('click', (e) => {
+      // middle click to close tab
+      if (e.button === 1) {
+        chrome.tabs.remove(tab.id)
+      } else {
+        chrome.tabs.update(tab.id, { active: true })
+      }
+    })
+    tabElem.querySelector('.close').addEventListener('click', (e) => {
+      e.stopPropagation()
       chrome.tabs.remove(tab.id)
     })
     const faviconElem = tabElem.querySelector('.favicon')
@@ -159,7 +267,14 @@ class WebUI {
 
   renderTab(tab) {
     let tabElem = this.$.tabList.querySelector(`[data-tab-id="${tab.id}"]`)
-    if (!tabElem) tabElem = this.createTabNode(tab)
+    if (!tabElem) {
+      tabElem = this.createTabNode(tab)
+
+      // Animate the tab in
+      setTimeout(() => {
+        tabElem.style.animation = `tab-grow-in var(--transition-duration)`
+      }, 0)
+    }
 
     if (tab.active) {
       tabElem.dataset.active = ''
@@ -185,7 +300,8 @@ class WebUI {
   }
 
   renderToolbar(tab) {
-    this.$.addressUrl.value = tab.url
+    this.$.addressUrl.value = tab.url === 'about:newtab' ? '' : tab.url
+    this.$.addressUrl.placeholder = 'Ask Deca or type a URL'
     // this.$.browserActions.tab = tab.id
   }
 }
