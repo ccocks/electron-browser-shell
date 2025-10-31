@@ -15,6 +15,7 @@ class WebUI {
       goForwardButton: $('#goforward'),
       reloadButton: $('#reload'),
       addressUrl: $('#addressurl'),
+      suggestions: $('#suggestions'),
 
       browserActions: $('#actions'),
 
@@ -42,6 +43,8 @@ class WebUI {
     this.$.reloadButton.addEventListener('click', () => chrome.tabs.reload())
     this.$.addressUrl.addEventListener('keypress', this.onAddressUrlKeyPress.bind(this))
     this.$.addressUrl.addEventListener('click', () => this.$.addressUrl.select())
+    this.$.addressUrl.addEventListener('keyup', this.onAddressUrlKeyUp.bind(this))
+    this.$.addressUrl.addEventListener('blur', () => this.hideSuggestions())
 
     this.$.minimizeButton.addEventListener('click', () =>
       chrome.windows.get(chrome.windows.WINDOW_ID_CURRENT, (win) => {
@@ -212,7 +215,47 @@ class WebUI {
     if (event.code === 'Enter') {
       const url = this.$.addressUrl.value
       chrome.tabs.update({ url })
+      this.hideSuggestions()
     }
+  }
+
+  onAddressUrlKeyUp() {
+    const text = this.$.addressUrl.value
+    if (text.length > 0) {
+      // In a real implementation, we would get suggestions from the browser.
+      // For the test mode, we'll just use some mock data.
+      const mockSuggestions = [
+        { title: 'Google', url: 'https://google.com' },
+        { title: 'Github', url: 'https://github.com' },
+      ].filter(s => s.url.includes(text) || s.title.toLowerCase().includes(text))
+      this.renderSuggestions(mockSuggestions)
+    } else {
+      this.hideSuggestions()
+    }
+  }
+
+  hideSuggestions() {
+    this.$.suggestions.classList.remove('visible')
+  }
+
+  renderSuggestions(suggestions) {
+    if (suggestions.length === 0) {
+      this.hideSuggestions()
+      return
+    }
+
+    this.$.suggestions.innerHTML = ''
+    for (const suggestion of suggestions) {
+      const div = document.createElement('div')
+      div.classList.add('suggestion')
+      div.textContent = `${suggestion.title} - ${suggestion.url}`
+      div.addEventListener('mousedown', () => {
+        chrome.tabs.update({ url: suggestion.url })
+        this.hideSuggestions()
+      })
+      this.$.suggestions.appendChild(div)
+    }
+    this.$.suggestions.classList.add('visible')
   }
 
   createTabNode(tab) {
@@ -222,22 +265,33 @@ class WebUI {
     tabElem.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', tab.id)
       this.draggedTab = tabElem
-      tabElem.classList.add('dragging')
+      // Add a class to the dragged tab to change its appearance.
+      this.draggedTab.classList.add('dragging')
     })
+
     tabElem.addEventListener('dragend', () => {
+      // Remove the dragging class when the drag operation ends.
       this.draggedTab.classList.remove('dragging')
       this.draggedTab = null
     })
+
     tabElem.addEventListener('dragover', (e) => {
       e.preventDefault()
-      if (tabElem !== this.draggedTab) {
-        const rect = tabElem.getBoundingClientRect()
-        const isAfter = e.clientX > rect.left + rect.width / 2
-        if (isAfter) {
-          tabElem.parentNode.insertBefore(this.draggedTab, tabElem.nextSibling)
-        } else {
-          tabElem.parentNode.insertBefore(this.draggedTab, tabElem)
-        }
+    })
+
+    tabElem.addEventListener('dragenter', (e) => {
+      e.preventDefault()
+      if (tabElem === this.draggedTab) return
+
+      const rect = tabElem.getBoundingClientRect()
+      // Check if the cursor is in the right half of the tab.
+      const isAfter = e.clientX > rect.left + rect.width / 2
+      if (isAfter) {
+        // Insert the dragged tab after the current tab.
+        tabElem.parentNode.insertBefore(this.draggedTab, tabElem.nextSibling)
+      } else {
+        // Insert the dragged tab before the current tab.
+        tabElem.parentNode.insertBefore(this.draggedTab, tabElem)
       }
     })
 
