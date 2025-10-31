@@ -99,7 +99,6 @@
         min-width: 0;
         flex: 1 1 auto;
         gap: 4px;
-        overflow: hidden;
       }
 
       #createtab {
@@ -132,8 +131,9 @@
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
-        width: 220px;
-        flex-shrink: 0;
+        max-width: 240px;
+        min-width: 72px;
+        flex: 1 1 auto;
         background: var(--tab-inactive-bg);
         border-radius: 8px;
         position: relative;
@@ -240,6 +240,13 @@
 
       .tab .controls .control:disabled {
         display: none;
+      }
+
+      .tab.new-tab {
+        max-width: 0;
+        opacity: 0;
+        padding-left: 0;
+        padding-right: 0;
       }
 
       .app-drag {
@@ -395,28 +402,14 @@
         animation: spin 1s linear infinite;
       }
 
-      @keyframes tab-grow-in {
-        from {
-          width: 0;
-          padding-left: 0;
-          padding-right: 0;
-          opacity: 0;
-        }
-        to {
-          width: 220px;
-          padding-left: 12px;
-          padding-right: 12px;
-          opacity: 1;
-        }
-      }
-
-      .tab.closing {
-        animation: tab-grow-in var(--transition-duration) cubic-bezier(0.4, 0, 0.2, 1) reverse;
-        animation-fill-mode: forwards;
-      }
-
       .tab.dragging {
         opacity: 0.5;
+      }
+
+      .placeholder {
+        background: var(--tab-active-bg);
+        border-radius: 8px;
+        flex-shrink: 0;
       }
 
       #suggestions {
