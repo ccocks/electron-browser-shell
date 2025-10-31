@@ -24,6 +24,7 @@ class WebUI {
       closeButton: $('#close'),
     }
 
+
     const urlParams = new URLSearchParams(window.location.search)
     if (urlParams.get('test') === 'true') {
       this.runTestMode()
@@ -36,6 +37,15 @@ class WebUI {
     document.body.classList.add(platformClass)
   }
 
+  debounce(func, wait) {
+    let timeout
+    return function(...args) {
+      const context = this
+      clearTimeout(timeout)
+      timeout = setTimeout(() => func.apply(context, args), wait)
+    }
+  }
+
   addEventListeners() {
     this.$.createTabButton.addEventListener('click', () => chrome.tabs.create())
     this.$.goBackButton.addEventListener('click', () => chrome.tabs.goBack())
@@ -45,6 +55,19 @@ class WebUI {
     this.$.addressUrl.addEventListener('click', () => this.$.addressUrl.select())
     this.$.addressUrl.addEventListener('keyup', this.onAddressUrlKeyUp.bind(this))
     this.$.addressUrl.addEventListener('blur', () => this.hideSuggestions())
+
+    this.$.tabList.addEventListener('drop', (e) => {
+      e.preventDefault()
+      const placeholder = this.$.tabList.querySelector('.placeholder')
+      if (placeholder) {
+        this.$.tabList.insertBefore(this.draggedTab, placeholder)
+        placeholder.remove()
+
+        const draggedTabId = parseInt(this.draggedTab.dataset.tabId, 10)
+        const newIndex = Array.from(this.$.tabList.children).indexOf(this.draggedTab)
+        chrome.tabs.move(draggedTabId, { index: newIndex })
+      }
+    })
 
     this.$.minimizeButton.addEventListener('click', () =>
       chrome.windows.get(chrome.windows.WINDOW_ID_CURRENT, (win) => {
@@ -179,11 +202,15 @@ class WebUI {
     chrome.tabs.onRemoved.addListener((tabId) => {
       const tabIndex = this.tabList.findIndex((tab) => tab.id === tabId)
       if (tabIndex > -1) {
-        this.tabList.splice(tabIndex, 1)
         const tabNode = this.$.tabList.querySelector(`[data-tab-id="${tabId}"]`)
         if (tabNode) {
-          tabNode.classList.add('closing')
-          tabNode.addEventListener('animationend', () => tabNode.remove())
+          tabNode.classList.add('new-tab') // This will trigger the shrink/fade animation
+          tabNode.addEventListener('transitionend', () => {
+            this.tabList.splice(tabIndex, 1)
+            tabNode.remove()
+          })
+        } else {
+          this.tabList.splice(tabIndex, 1)
         }
       }
     })
@@ -217,6 +244,14 @@ class WebUI {
       chrome.tabs.update({ url })
       this.hideSuggestions()
     }
+  }
+
+  createPlaceholder() {
+    const placeholder = document.createElement('div')
+    placeholder.classList.add('placeholder')
+    placeholder.style.width = `${this.draggedTab.offsetWidth}px`
+    placeholder.style.height = `${this.draggedTab.offsetHeight}px`
+    return placeholder
   }
 
   onAddressUrlKeyUp() {
@@ -273,6 +308,11 @@ class WebUI {
       // Remove the dragging class when the drag operation ends.
       this.draggedTab.classList.remove('dragging')
       this.draggedTab = null
+
+      const placeholder = this.$.tabList.querySelector('.placeholder')
+      if (placeholder) {
+        placeholder.remove()
+      }
     })
 
     tabElem.addEventListener('dragover', (e) => {
@@ -283,15 +323,20 @@ class WebUI {
       e.preventDefault()
       if (tabElem === this.draggedTab) return
 
+      const placeholder = this.$.tabList.querySelector('.placeholder')
+      if (placeholder) {
+        placeholder.remove()
+      }
+
       const rect = tabElem.getBoundingClientRect()
       // Check if the cursor is in the right half of the tab.
       const isAfter = e.clientX > rect.left + rect.width / 2
       if (isAfter) {
-        // Insert the dragged tab after the current tab.
-        tabElem.parentNode.insertBefore(this.draggedTab, tabElem.nextSibling)
+        // Insert the placeholder after the current tab.
+        tabElem.parentNode.insertBefore(this.createPlaceholder(), tabElem.nextSibling)
       } else {
-        // Insert the dragged tab before the current tab.
-        tabElem.parentNode.insertBefore(this.draggedTab, tabElem)
+        // Insert the placeholder before the current tab.
+        tabElem.parentNode.insertBefore(this.createPlaceholder(), tabElem)
       }
     })
 
@@ -323,11 +368,10 @@ class WebUI {
     let tabElem = this.$.tabList.querySelector(`[data-tab-id="${tab.id}"]`)
     if (!tabElem) {
       tabElem = this.createTabNode(tab)
-
-      // Animate the tab in
-      setTimeout(() => {
-        tabElem.style.animation = `tab-grow-in var(--transition-duration)`
-      }, 0)
+      tabElem.classList.add('new-tab')
+      requestAnimationFrame(() => {
+        tabElem.classList.remove('new-tab')
+      })
     }
 
     if (tab.active) {
