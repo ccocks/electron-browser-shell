@@ -98,6 +98,8 @@
         flex-direction: row;
         min-width: 0;
         flex: 1 1 auto;
+        gap: 4px;
+        overflow: hidden;
       }
 
       #createtab {
@@ -115,6 +117,7 @@
         transition: var(--transition);
         -webkit-app-region: no-drag;
         flex-shrink: 0;
+        margin-left: auto;
       }
 
       #createtab:hover {
@@ -129,8 +132,8 @@
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
-        max-width: 220px;
-        flex: 1 0 auto;
+        width: 220px;
+        flex-shrink: 0;
         background: var(--tab-inactive-bg);
         border-radius: 8px;
         position: relative;
@@ -140,19 +143,6 @@
         margin: 0;
       }
 
-      .tab:not([data-active]):after {
-        content: '';
-        position: absolute;
-        right: -4px;
-        top: 25%;
-        height: 50%;
-        width: 1px;
-        background-color: var(--border-color);
-      }
-
-      .tab:last-child:after {
-        display: none;
-      }
 
       .tab:hover {
         background: var(--control-hover);
@@ -407,13 +397,13 @@
 
       @keyframes tab-grow-in {
         from {
-          max-width: 0;
+          width: 0;
           padding-left: 0;
           padding-right: 0;
           opacity: 0;
         }
         to {
-          max-width: 220px;
+          width: 220px;
           padding-left: 12px;
           padding-right: 12px;
           opacity: 1;
@@ -421,11 +411,39 @@
       }
 
       .tab.closing {
-        animation: tab-grow-in var(--transition-duration) reverse;
+        animation: tab-grow-in var(--transition-duration) cubic-bezier(0.4, 0, 0.2, 1) reverse;
+        animation-fill-mode: forwards;
       }
 
       .tab.dragging {
         opacity: 0.5;
+      }
+
+      #suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--toolbar-bg);
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        display: none;
+        z-index: 100;
+      }
+
+      #suggestions.visible {
+        display: block;
+      }
+
+      .suggestion {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      .suggestion:hover {
+        background: var(--control-hover);
       }
     </style>
   </head>
@@ -478,6 +496,7 @@
         </div>
         <div class="address-bar">
           <input id="addressurl" spellcheck="false" />
+          <div id="suggestions"></div>
         </div>
         <browser-action-list id="actions" alignment="bottom left"></browser-action-list>
       </div>
