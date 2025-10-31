@@ -293,7 +293,8 @@ class Browser {
       window: {
         width: 1280,
         height: 720,
-        frame: false,
+        frame: true,
+        transparent: true,
         titleBarStyle: 'hidden',
         titleBarOverlay: {
           height: 31,

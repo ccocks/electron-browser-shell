@@ -91,7 +91,7 @@
         left: env(titlebar-area-x);
         top: env(titlebar-area-y);
         width: env(titlebar-area-width);
-        height: calc(env(titlebar-area-height, 36px) + 1px);
+        height: calc(env(titlebar-area-height, 36px) + 5px);
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -140,14 +140,16 @@
         align-items: center;
         width: 220px;
         background: var(--tab-inactive-bg);
-        border-radius: 6px 6px 0 0;
+        border-radius: 8px;
         border: 1px solid var(--border-color);
         border-bottom: none;
         position: relative;
         transition: var(--transition);
         -webkit-app-region: no-drag;
         cursor: pointer;
-        margin-top: 6px;
+        margin-top: 4px;
+        margin-bottom: 4px;
+        margin-left: 4px;
       }
 
       .tab:hover {
@@ -244,8 +246,8 @@
       }
 
       .tab .controls .close:hover {
-        background: #ff453a;
-        color: white;
+        background: var(--tab-inactive-bg);
+        color: var(--text-color);
       }
 
       .tab .controls .control:disabled {
