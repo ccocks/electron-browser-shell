@@ -5,21 +5,19 @@
     <title>Shell Browser</title>
     <style>
       :root {
-        /* Modern Apple-like color palette */
         --bg-color: #f5f5f7;
         --text-color: #1d1d1f;
         --text-secondary: #6e6e73;
-        --tab-active-bg: #ffffff;
-        --tab-inactive-bg: #f0f0f5;
+        --tab-active-bg: #e0e0e5;
+        --tab-inactive-bg: transparent;
         --toolbar-bg: #f5f5f7;
         --border-color: #d2d2d7;
         --accent-color: #0071e3;
         --accent-hover: #0077ed;
         --control-hover: rgba(0, 0, 0, 0.05);
         --control-active: rgba(0, 0, 0, 0.1);
-        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-duration: 0.15s;
+        --transition: all var(--transition-duration) cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       @media (prefers-color-scheme: dark) {
@@ -27,16 +25,14 @@
           --bg-color: #1e1e1e;
           --text-color: #f5f5f7;
           --text-secondary: #a1a1a6;
-          --tab-active-bg: #2c2c2e;
-          --tab-inactive-bg: #1c1c1e;
+          --tab-active-bg: #3c3c3e;
+          --tab-inactive-bg: transparent;
           --toolbar-bg: #1e1e1e;
           --border-color: #38383a;
           --accent-color: #0a84ff;
           --accent-hover: #5e9eff;
           --control-hover: rgba(255, 255, 255, 0.1);
           --control-active: rgba(255, 255, 255, 0.15);
-          --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-          --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
         }
       }
       
@@ -73,37 +69,35 @@
       .topbar {
         background: var(--toolbar-bg);
         border-bottom: 1px solid var(--border-color);
-        box-shadow: var(--shadow-sm);
         position: relative;
         z-index: 1;
+        padding: 4px 0;
       }
 
       /*----- TABS -----*/
 
       #tabstrip {
         width: 100%;
-        height: calc(env(titlebar-area-height, 36px) + 1px);
+        height: 36px;
         -webkit-app-region: drag;
+        display: flex;
+        align-items: center;
       }
 
       .tab-container {
-        position: fixed;
-        left: env(titlebar-area-x);
-        top: env(titlebar-area-y);
-        width: env(titlebar-area-width);
-        height: calc(env(titlebar-area-height, 36px) + 5px);
         display: flex;
         flex-direction: row;
         align-items: center;
         padding: 0 8px;
-        gap: 4px;
+        gap: 8px;
+        width: 100%;
       }
       
       .tab-list {
-        height: 100%;
         display: flex;
         flex-direction: row;
         min-width: 0;
+        flex: 1 1 auto;
       }
 
       #createtab {
@@ -111,15 +105,16 @@
         border: none;
         color: var(--text-secondary);
         font-size: 18px;
-        width: 24px;
-        height: 24px;
-        border-radius: 4px;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         transition: var(--transition);
         -webkit-app-region: no-drag;
+        flex-shrink: 0;
       }
 
       #createtab:hover {
@@ -127,41 +122,44 @@
         color: var(--text-color);
       }
 
-      #createtab:hover {
-        background: rgba(255,255,255,0.2);
-      }
-
       .tab {
         padding: 0 12px;
-        height: 28px;
+        height: 32px;
         overflow: hidden;
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
-        width: 220px;
+        max-width: 220px;
+        flex: 1 0 auto;
         background: var(--tab-inactive-bg);
         border-radius: 8px;
-        border: 1px solid var(--border-color);
-        border-bottom: none;
         position: relative;
         transition: var(--transition);
         -webkit-app-region: no-drag;
         cursor: pointer;
-        margin-top: 4px;
-        margin-bottom: 4px;
-        margin-left: 4px;
+        margin: 0;
+      }
+
+      .tab:not([data-active]):after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 25%;
+        height: 50%;
+        width: 1px;
+        background-color: var(--border-color);
+      }
+
+      .tab:last-child:after {
+        display: none;
       }
 
       .tab:hover {
-        background: var(--tab-hover-bg, var(--tab-inactive-bg));
+        background: var(--control-hover);
       }
 
       .tab[data-active] {
         background: var(--tab-active-bg);
-        border-bottom: 1px solid var(--tab-active-bg);
-        margin-bottom: -1px;
-        z-index: 1;
-        box-shadow: var(--shadow-sm);
       }
 
       .tab[data-active]:hover {
@@ -186,7 +184,7 @@
         min-width: 0;
         text-overflow: ellipsis;
         overflow: hidden;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 500;
         color: var(--text-color);
         transition: var(--transition);
@@ -194,7 +192,7 @@
       }
 
       .tab[data-active] .title {
-        color: var(--accent-color);
+        color: var(--text-color);
       }
 
       .tab .controls {
@@ -212,10 +210,10 @@
       .tab .controls .control {
         background: transparent;
         border: none;
-        border-radius: 50%;
+        border-radius: 6px;
         padding: 0;
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
         color: var(--text-secondary);
         font-size: 12px;
         line-height: 1;
@@ -223,7 +221,7 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        opacity: 0;
+        opacity: 0.8;
         transition: var(--transition);
       }
 
@@ -246,7 +244,7 @@
       }
 
       .tab .controls .close:hover {
-        background: var(--tab-inactive-bg);
+        background: var(--control-hover);
         color: var(--text-color);
       }
 
@@ -273,7 +271,7 @@
 
       .window-controls {
         display: flex;
-        gap: 2px;
+        gap: 8px;
         -webkit-app-region: no-drag;
         margin-left: 8px;
       }
@@ -284,7 +282,7 @@
         border-radius: 50%;
         border: none;
         padding: 0;
-        margin: 0 2px;
+        margin: 0;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -317,7 +315,7 @@
       /*----- TOOLBAR -----*/
 
       .toolbar {
-        height: 40px;
+        height: 44px;
         background-color: var(--toolbar-bg);
         display: flex;
         align-items: center;
@@ -338,28 +336,29 @@
       
       .address-bar {
         flex: 1 0 auto;
-        height: 28px;
+        height: 32px;
         position: relative;
-        max-width: 800px;
+        max-width: 600px;
+        margin: 0 auto;
       }
 
       .address-bar input {
         width: 100%;
         height: 100%;
-        background: var(--tab-inactive-bg);
+        background: var(--tab-active-bg);
         color: var(--text-color);
         border: 1px solid var(--border-color);
         border-radius: 8px;
         padding: 0 12px;
         outline: none;
-        font-size: 12px;
+        font-size: 13px;
         transition: var(--transition);
-        box-shadow: 0 0 0 0 var(--accent-color);
+        box-shadow: none;
       }
 
       .address-bar input:focus {
         border-color: var(--accent-color);
-        box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
       }
 
       .address-bar input::placeholder {
@@ -405,6 +404,29 @@
       #reload.loading {
         animation: spin 1s linear infinite;
       }
+
+      @keyframes tab-grow-in {
+        from {
+          max-width: 0;
+          padding-left: 0;
+          padding-right: 0;
+          opacity: 0;
+        }
+        to {
+          max-width: 220px;
+          padding-left: 12px;
+          padding-right: 12px;
+          opacity: 1;
+        }
+      }
+
+      .tab.closing {
+        animation: tab-grow-in var(--transition-duration) reverse;
+      }
+
+      .tab.dragging {
+        opacity: 0.5;
+      }
     </style>
   </head>
   <body>
@@ -413,7 +435,7 @@
         <div class="tab-container">
           <ul class="tab-list">
             <template id="tabtemplate">
-              <li class="tab">
+              <li class="tab" draggable="true">
                 <img class="favicon" />
                 <span class="title">New Tab</span>
                 <div class="controls">
