@@ -96,6 +96,11 @@ class WebUI {
     // Mock chrome API to avoid errors in the console.
     window.chrome = {
       tabs: {
+        onCreated: { addListener: (cb) => { this.onCreatedListener = cb } },
+        onActivated: { addListener: (cb) => { this.onActivatedListener = cb } },
+        onUpdated: { addListener: (cb) => { this.onUpdatedListener = cb } },
+        onRemoved: { addListener: (cb) => { this.onRemovedListener = cb } },
+        onMoved: { addListener: (cb) => { this.onMovedListener = cb } },
         create: () => {
           const newId = Math.max(0, ...this.tabList.map((t) => t.id)) + 1
           const newTab = { id: newId, title: 'New Tab', url: 'about:newtab', active: false }
@@ -129,6 +134,14 @@ class WebUI {
             }
           }
         },
+        move: (tabId, moveProperties) => {
+          const fromIndex = this.tabList.findIndex(tab => tab.id === tabId)
+          if (this.onMovedListener) {
+            // Simulate the real browser behavior: the move happens, then the event is fired.
+            // The listener is responsible for updating the UI's internal state.
+            this.onMovedListener(tabId, { fromIndex, toIndex: moveProperties.index, windowId: this.windowId })
+          }
+        }
       },
       windows: {
         get: (id, cb) => cb({ id, state: 'normal' }),
@@ -139,6 +152,7 @@ class WebUI {
 
     // now that chrome is mocked, add the listeners
     this.addEventListeners()
+    this.setupBrowserListeners()
 
     this.tabList = [
       { id: 1, title: 'Google', url: 'https://google.com', active: true, favIconUrl: 'https://www.google.com/favicon.ico' },
@@ -412,6 +426,7 @@ class WebUI {
   }
 
   renderTabs() {
+    this.$.tabList.innerHTML = ''
     this.tabList.forEach((tab) => {
       this.renderTab(tab)
     })
