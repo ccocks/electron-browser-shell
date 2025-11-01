@@ -14,10 +14,12 @@ class WebUI {
       goBackButton: $('#goback'),
       goForwardButton: $('#goforward'),
       reloadButton: $('#reload'),
+      homeButton: $('#home'),
       addressUrl: $('#addressurl'),
       suggestions: $('#suggestions'),
 
       browserActions: $('#actions'),
+      settingsButton: $('#settings'),
 
       minimizeButton: $('#minimize'),
       maximizeButton: $('#maximize'),
@@ -51,6 +53,8 @@ class WebUI {
     this.$.goBackButton.addEventListener('click', () => chrome.tabs.goBack())
     this.$.goForwardButton.addEventListener('click', () => chrome.tabs.goForward())
     this.$.reloadButton.addEventListener('click', () => chrome.tabs.reload())
+    this.$.homeButton.addEventListener('click', () => chrome.tabs.update({ url: 'about:newtab' }))
+    this.$.settingsButton.addEventListener('click', () => { /* TODO: Open settings menu */ alert('Settings clicked!') })
     this.$.addressUrl.addEventListener('keypress', this.onAddressUrlKeyPress.bind(this))
     this.$.addressUrl.addEventListener('click', () => this.$.addressUrl.select())
     this.$.addressUrl.addEventListener('keyup', this.onAddressUrlKeyUp.bind(this))
@@ -60,11 +64,16 @@ class WebUI {
       e.preventDefault()
       const placeholder = this.$.tabList.querySelector('.placeholder')
       if (placeholder) {
-        this.$.tabList.insertBefore(this.draggedTab, placeholder)
-        placeholder.remove()
-
         const draggedTabId = parseInt(this.draggedTab.dataset.tabId, 10)
-        const newIndex = Array.from(this.$.tabList.children).indexOf(this.draggedTab)
+        const children = Array.from(this.$.tabList.children)
+        const placeholderIndex = children.indexOf(placeholder)
+        const draggedIndex = children.indexOf(this.draggedTab)
+
+        let newIndex = placeholderIndex
+        if (draggedIndex < placeholderIndex) {
+          newIndex--
+        }
+
         chrome.tabs.move(draggedTabId, { index: newIndex })
       }
     })
@@ -213,6 +222,17 @@ class WebUI {
           this.tabList.splice(tabIndex, 1)
         }
       }
+    })
+
+    chrome.tabs.onMoved.addListener((tabId, moveInfo) => {
+      if (moveInfo.windowId !== this.windowId) return
+
+      // Move tab in our internal list
+      const [movedTab] = this.tabList.splice(moveInfo.fromIndex, 1)
+      this.tabList.splice(moveInfo.toIndex, 0, movedTab)
+
+      // Re-render tabs to reflect the new order
+      this.renderTabs()
     })
   }
 
