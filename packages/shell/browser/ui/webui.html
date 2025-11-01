@@ -98,7 +98,7 @@
         flex-direction: row;
         min-width: 0;
         flex: 1 1 auto;
-        gap: 4px;
+        gap: 8px; /* Increased gap for better spacing */
       }
 
       #createtab {
@@ -132,6 +132,7 @@
         flex-wrap: nowrap;
         align-items: center;
         flex: 1 1 0;
+        min-width: 0; /* Allow tabs to shrink equally */
         background: var(--tab-inactive-bg);
         border-radius: 8px;
         position: relative;
@@ -330,17 +331,13 @@
       }
       
       .address-bar {
-        flex: 1 0 auto;
+        flex: 1 1 auto;
         height: 32px;
         position: relative;
         max-width: 600px;
-        margin: 0 auto;
-      }
-
-      .address-bar {
-        position: relative;
         display: flex;
         align-items: center;
+        min-width: 100px;
       }
 
       .security-icon {
