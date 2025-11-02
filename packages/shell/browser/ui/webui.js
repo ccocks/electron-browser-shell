@@ -334,8 +334,10 @@ class WebUI {
     tabElem.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', tab.id)
       this.draggedTab = tabElem
-      // Add a class to the dragged tab to change its appearance.
-      this.draggedTab.classList.add('dragging')
+      // Use setTimeout to allow the browser to create a drag image before we modify the element
+      setTimeout(() => {
+        this.draggedTab.classList.add('dragging')
+      }, 0)
     })
 
     tabElem.addEventListener('dragend', () => {
