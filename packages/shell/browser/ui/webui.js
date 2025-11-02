@@ -53,8 +53,12 @@ class WebUI {
     this.$.goBackButton.addEventListener('click', () => chrome.tabs.goBack())
     this.$.goForwardButton.addEventListener('click', () => chrome.tabs.goForward())
     this.$.reloadButton.addEventListener('click', () => chrome.tabs.reload())
-    this.$.homeButton.addEventListener('click', () => chrome.tabs.update({ url: 'about:newtab' }))
-    this.$.settingsButton.addEventListener('click', () => { /* TODO: Open settings menu */ alert('Settings clicked!') })
+    this.$.homeButton.addEventListener('click', () => {
+      chrome.tabs.update({ url: 'deca-browser://newtab' })
+    })
+    this.$.settingsButton.addEventListener('click', () => {
+      chrome.tabs.create({ url: 'deca-browser://settings' })
+    })
     this.$.addressUrl.addEventListener('keypress', this.onAddressUrlKeyPress.bind(this))
     this.$.addressUrl.addEventListener('click', () => this.$.addressUrl.select())
     this.$.addressUrl.addEventListener('keyup', this.onAddressUrlKeyUp.bind(this))
@@ -260,7 +264,7 @@ class WebUI {
         this.renderTab(tab)
         this.renderToolbar(tab)
 
-        if (tab.url === 'about:newtab') {
+        if (tab.url === 'deca-browser://newtab') {
           setTimeout(() => this.$.addressUrl.focus(), 0)
         }
       } else {
@@ -334,8 +338,10 @@ class WebUI {
     tabElem.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', tab.id)
       this.draggedTab = tabElem
-      // Add a class to the dragged tab to change its appearance.
-      this.draggedTab.classList.add('dragging')
+      // Use setTimeout to allow the browser to create a drag image before we modify the element
+      setTimeout(() => {
+        this.draggedTab.classList.add('dragging')
+      }, 0)
     })
 
     tabElem.addEventListener('dragend', () => {
@@ -433,10 +439,15 @@ class WebUI {
   }
 
   renderToolbar(tab) {
-    this.$.addressUrl.value = tab.url === 'about:newtab' ? '' : tab.url
+    this.$.addressUrl.value = tab.url === 'deca-browser://newtab' ? '' : tab.url
     this.$.addressUrl.placeholder = 'Ask Deca or type a URL'
     // this.$.browserActions.tab = tab.id
   }
 }
+
+chrome.ipcRenderer.on('focus-address-bar', () => {
+  document.getElementById('addressurl').focus()
+  document.getElementById('addressurl').select()
+})
 
 window.webui = new WebUI()

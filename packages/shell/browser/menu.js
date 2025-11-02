@@ -1,35 +1,77 @@
-const { Menu } = require('electron')
+const { Menu, app } = require('electron')
 
 const setupMenu = (browser) => {
   const isMac = process.platform === 'darwin'
 
-  const tab = () => browser.getFocusedWindow().getFocusedTab()
-  const tabWc = () => tab().webContents
+  const tab = () => browser.getFocusedWindow()?.getFocusedTab()
+  const tabWc = () => tab()?.webContents
+  const win = () => browser.getFocusedWindow()?.window
 
   const template = [
-    ...(isMac ? [{ role: 'appMenu' }] : []),
-    { role: 'fileMenu' },
+    // { appMenu }
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: 'about' },
+              { type: 'separator' },
+              { role: 'services' },
+              { type: 'separator' },
+              { role: 'hide' },
+              { role: 'hideOthers' },
+              { role: 'unhide' },
+              { type: 'separator' },
+              { role: 'quit' },
+            ],
+          },
+        ]
+      : []),
+    // { fileMenu }
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New Tab',
+          accelerator: 'CmdOrCtrl+T',
+          click: () => {
+            browser.getFocusedWindow()?.tabs.create()
+          },
+        },
+        { type: 'separator' },
+        {
+          label: 'Close Tab',
+          accelerator: 'CmdOrCtrl+W',
+          click: () => {
+            const t = tab()
+            if (t) {
+              browser.getFocusedWindow()?.tabs.remove(t.id)
+            }
+          },
+        },
+        isMac ? { role: 'close' } : { role: 'quit' },
+      ],
+    },
+    // { editMenu }
     { role: 'editMenu' },
+    // { viewMenu }
     {
       label: 'View',
       submenu: [
         {
           label: 'Reload',
           accelerator: 'CmdOrCtrl+R',
-          nonNativeMacOSRole: true,
-          click: () => tabWc().reload(),
+          click: () => tabWc()?.reload(),
         },
         {
           label: 'Force Reload',
           accelerator: 'Shift+CmdOrCtrl+R',
-          nonNativeMacOSRole: true,
-          click: () => tabWc().reloadIgnoringCache(),
+          click: () => tabWc()?.reloadIgnoringCache(),
         },
         {
-          label: 'Toggle Developer Tool asdf',
+          label: 'Toggle Developer Tools',
           accelerator: isMac ? 'Alt+Command+I' : 'Ctrl+Shift+I',
-          nonNativeMacOSRole: true,
-          click: () => tabWc().toggleDevTools(),
+          click: () => tabWc()?.toggleDevTools(),
         },
         { type: 'separator' },
         { role: 'resetZoom' },
@@ -39,7 +81,30 @@ const setupMenu = (browser) => {
         { role: 'togglefullscreen' },
       ],
     },
-    { role: 'windowMenu' },
+    // { windowMenu }
+    {
+      label: 'Window',
+      submenu: [
+        {
+          label: 'Focus Address Bar',
+          accelerator: 'CmdOrCtrl+L',
+          click: () => {
+            win()?.webContents.send('focus-address-bar')
+          },
+        },
+        { type: 'separator' },
+        { role: 'minimize' },
+        { role: 'zoom' },
+        ...(isMac
+          ? [
+              { type: 'separator' },
+              { role: 'front' },
+              { type: 'separator' },
+              { role: 'window' },
+            ]
+          : [{ role: 'close' }]),
+      ],
+    },
   ]
 
   const menu = Menu.buildFromTemplate(template)
