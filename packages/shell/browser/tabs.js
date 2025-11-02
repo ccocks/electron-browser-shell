@@ -1,7 +1,7 @@
 const { EventEmitter } = require('events')
 const { WebContentsView } = require('electron')
 
-const toolbarHeight = 88
+const toolbarHeight = 89
 
 class Tab {
   constructor(parentWindow, wcvOpts = {}) {

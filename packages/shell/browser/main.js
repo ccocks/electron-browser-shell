@@ -1,5 +1,5 @@
 const path = require('path')
-const { app, session, BrowserWindow, dialog } = require('electron')
+const { app, session, BrowserWindow, dialog, protocol } = require('electron')
 
 const { Tabs } = require('./tabs')
 const { ElectronChromeExtensions } = require('electron-chrome-extensions')
@@ -87,7 +87,7 @@ class Browser {
   windows = []
 
   urls = {
-    newtab: 'about:blank',
+    newtab: 'deca-browser://newtab',
   }
 
   constructor() {
@@ -199,6 +199,11 @@ class Browser {
 
     // Display <browser-action-list> extension icons.
     ElectronChromeExtensions.handleCRXProtocol(this.session)
+
+    protocol.registerFileProtocol('deca-browser', (request, callback) => {
+      const url = request.url.substr(15) // 'deca-browser://'.length
+      callback({ path: path.join(PATHS.WEBUI, `${url}.html`) })
+    })
 
     this.extensions.on('browser-action-popup-created', (popup) => {
       this.popup = popup
