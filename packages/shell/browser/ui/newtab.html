@@ -7,13 +7,24 @@
       --bg-color: #f5f5f7;
       --text-color: #1d1d1f;
       --search-bg-color: #e0e0e5;
+      --placeholder-color: #6e6e73;
+      --accent-color: #0071e3;
+      --logo-font-weight: 600;
     }
     @media (prefers-color-scheme: dark) {
       :root {
         --bg-color: #1e1e1e;
         --text-color: #f5f5f7;
         --search-bg-color: #3c3c3e;
+        --placeholder-color: #a1a1a6;
+        --accent-color: #0a84ff;
       }
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
     }
     body {
       background-color: var(--bg-color);
@@ -21,40 +32,82 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
+      justify-content: start;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding-top: 15vh; /* Push content down from the top */
     }
-    h1 {
-      font-size: 2.5em;
-      font-weight: 500;
-      margin-bottom: 2rem;
+    .logo {
+      font-size: 48px;
+      font-weight: var(--logo-font-weight);
+      margin-bottom: 32px;
+      color: var(--text-color);
     }
     .search-container {
       width: 100%;
-      max-width: 580px;
+      max-width: 584px;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .search-icon {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--placeholder-color);
+      pointer-events: none;
     }
     .search-box {
       width: 100%;
-      padding: 12px 20px;
+      padding: 13px 20px 13px 52px; /* Increased padding for icon */
       font-size: 16px;
-      border-radius: 24px;
+      border-radius: 28px;
       border: 1px solid transparent;
       background-color: var(--search-bg-color);
       color: var(--text-color);
       box-sizing: border-box;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     .search-box:focus {
       outline: none;
-      border: 1px solid var(--text-color);
+      border-color: rgba(0,0,0,0.1);
+      background-color: var(--bg-color);
+      box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15), 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .search-box::placeholder {
+      color: var(--placeholder-color);
+      opacity: 1;
     }
   </style>
 </head>
 <body>
-  <h1>Deca Browser</h1>
+  <div class="logo">Deca</div>
   <div class="search-container">
-    <input type="text" class="search-box" placeholder="Search or type a URL">
+    <div class="search-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <input type="text" id="search" class="search-box" placeholder="Search with Deca or type a URL">
   </div>
+  <script>
+    document.getElementById('search').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const query = e.target.value;
+        try {
+          // Check if it's a valid URL, if not, treat it as a search query.
+          new URL(query);
+          chrome.tabs.update({ url: query });
+        } catch (_) {
+          // This assumes Deca search is the default.
+          chrome.tabs.update({ url: `https://search.brave.com/search?q=${encodeURIComponent(query)}` });
+        }
+      }
+    });
+  </script>
 </body>
 </html>

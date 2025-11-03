@@ -163,6 +163,10 @@ class WebUI {
       { id: 2, title: 'Github', url: 'https://github.com', active: false, favIconUrl: 'https://github.com/favicon.ico' },
       { id: 3, title: 'A very long title to see how it overflows and how the UI handles it', url: 'https://example.com', active: false, audible: true },
       { id: 4, title: 'Stack Overflow', url: 'https://stackoverflow.com', active: false, favIconUrl: 'https://cdn.sstatic.net/Sites/stackoverflow/Img/favicon.ico' },
+      { id: 5, title: 'Electron', url: 'https://www.electronjs.org/', active: false, favIconUrl: 'https://www.electronjs.org/assets/img/favicon.ico' },
+      { id: 6, title: 'MDN', url: 'https://developer.mozilla.org/', active: false, favIconUrl: 'https://developer.mozilla.org/favicon.ico' },
+      { id: 7, title: 'CSS-Tricks', url: 'https://css-tricks.com/', active: false, favIconUrl: 'https://css-tricks.com/favicon.ico' },
+      { id: 8, title: 'Playwright', url: 'https://playwright.dev/', active: false, favIconUrl: 'https://playwright.dev/img/favicon.ico' }
     ]
     this.renderTabs()
 
