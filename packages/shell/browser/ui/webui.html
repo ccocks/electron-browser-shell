@@ -124,6 +124,11 @@
         color: var(--text-color);
       }
 
+      #createtab:active {
+        background: var(--control-active);
+        transform: scale(0.95);
+      }
+
       .tab {
         padding: 0 12px;
         height: 32px;
@@ -367,7 +372,8 @@
 
       .address-bar input:focus {
         border-color: var(--accent-color);
-        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+        box-shadow: 0 0 0 3.5px rgba(0, 122, 255, 0.25);
+        background-color: var(--bg-color);
       }
 
       .address-bar input::placeholder {
@@ -397,6 +403,7 @@
 
       .toolbar .control:active {
         background: var(--control-active);
+        transform: scale(0.92);
       }
 
       .toolbar .control:disabled {
